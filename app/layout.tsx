@@ -19,7 +19,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="flex justify-center items-start relative">
-            <div className="fixed pl-10 justify-center items-center">
+            <div className="fixed pl-10 ">
               <div className="pl-10">
                 <script
                   type="text/javascript"
@@ -44,7 +44,7 @@ export default function RootLayout({
             <div className="flex-grow flex justify-center items-center">
               {children}
             </div>
-            <div className="fixed pr-10 h-screen flex items-center">
+            <div className="fixed pr-10">
               <div className="pl-10">
                 <script
                   type="text/javascript"

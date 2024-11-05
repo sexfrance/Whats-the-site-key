@@ -85,7 +85,7 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
   }
 
   return (
-    <div className="flex items-center justify-center bg-background p-4 scale-100 sm:scale-110 md:scale-125 lg:scale-150">
+    <div className="flex items-center justify-center bg-background scale-100 sm:scale-110 md:scale-125 lg:scale-150">
       <Card className="w-full max-w-3xl shadow-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-between">
