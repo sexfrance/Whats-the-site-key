@@ -67,7 +67,7 @@ export default function RootLayout({
               </div>
             </div>
           </div>
-          <div className="flex justify-center">
+          <div className="flex mt-[-50px] justify-center">
             <script
               type="text/javascript"
               dangerouslySetInnerHTML={{
