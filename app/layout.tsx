@@ -20,7 +20,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="flex justify-center items-start min-h-screen relative">
             <div className="fixed left-0 top-0 h-screen flex items-center">
-              <div className="w-40 h-full">
+              <div className="pl-10">
                 <script
                   type="text/javascript"
                   dangerouslySetInnerHTML={{
@@ -45,7 +45,7 @@ export default function RootLayout({
               {children}
             </div>
             <div className="fixed right-0 top-0 h-screen flex items-center">
-              <div className="w-40 h-full">
+              <div className="pl-10">
                 <script
                   type="text/javascript"
                   dangerouslySetInnerHTML={{
