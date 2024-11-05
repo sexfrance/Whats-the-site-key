@@ -18,26 +18,55 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {children}
-          <div className="flex justify-center mt-5">
-            <script
-              type="text/javascript"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  atOptions = {
-                    'key' : '2aa5dd87245064af79eff4d487110df0',
-                    'format' : 'iframe',
-                    'height' : 90,
-                    'width' : 728,
-                    'params' : {}
-                  };
-                `,
-              }}
-            ></script>
-            <script
-              type="text/javascript"
-              src="//www.highperformanceformat.com/2aa5dd87245064af79eff4d487110df0/invoke.js"
-            ></script>
+          <div className="flex justify-center items-start min-h-screen">
+            {/* Left Ad Container */}
+            <div className="flex-none w-40 h-full">
+              <script
+                type="text/javascript"
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    atOptions = {
+                      'key' : 'ca77b3919db22954fff14719a4e43fcb',
+                      'format' : 'iframe',
+                      'height' : 600,
+                      'width' : 160,
+                      'params' : {}
+                    };
+                  `,
+                }}
+              ></script>
+              <script
+                type="text/javascript"
+                src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
+              ></script>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-grow flex justify-center items-center">
+              {children}
+            </div>
+
+            {/* Right Ad Container */}
+            <div className="flex-none w-40 h-full">
+              <script
+                type="text/javascript"
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    atOptions = {
+                      'key' : 'ca77b3919db22954fff14719a4e43fcb',
+                      'format' : 'iframe',
+                      'height' : 600,
+                      'width' : 160,
+                      'params' : {}
+                    };
+                  `,
+                }}
+              ></script>
+              <script
+                type="text/javascript"
+                src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
+              ></script>
+            </div>
           </div>
         </ThemeProvider>
       </body>
