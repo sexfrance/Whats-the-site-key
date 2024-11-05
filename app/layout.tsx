@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <div className="flex justify-center min-h-full items-start relative">
+          <div className="flex justify-center items-start relative">
             <div className="pl-10 ">
               <div className="pl-10">
                 <script
