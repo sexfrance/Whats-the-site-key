@@ -16,63 +16,56 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-black`}>
+      <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <div className="flex flex-col min-h-screen">
-            <div className="flex-grow flex justify-center items-start relative">
-              <div className="fixed left-0 top-0 h-screen flex items-center z-10">
-                <div className="w-40 h-full">
-                  <script
-                    type="text/javascript"
-                    dangerouslySetInnerHTML={{
-                      __html: `
-                        atOptions = {
-                          'key' : 'ca77b3919db22954fff14719a4e43fcb',
-                          'format' : 'iframe',
-                          'height' : 600,
-                          'width' : 160,
-                          'params' : {}
-                        };
-                      `,
-                    }}
-                  ></script>
-                  <script
-                    type="text/javascript"
-                    src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
-                  ></script>
-                </div>
-              </div>
-
-              {/* Main Content */}
-              <div className="flex-grow flex justify-center items-center">
-                {children}
-              </div>
-
-              {/* Right Ad Container */}
-              <div className="fixed right-0 top-0 h-screen flex items-center z-10">
-                <div className="w-40 h-full">
-                  <script
-                    type="text/javascript"
-                    dangerouslySetInnerHTML={{
-                      __html: `
-                        atOptions = {
-                          'key' : 'ca77b3919db22954fff14719a4e43fcb',
-                          'format' : 'iframe',
-                          'height' : 600,
-                          'width' : 160,
-                          'params' : {}
-                        };
-                      `,
-                    }}
-                  ></script>
-                  <script
-                    type="text/javascript"
-                    src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
-                  ></script>
-                </div>
+          <div className="flex justify-center items-start min-h-screen relative">
+            <div className="fixed left-0 top-0 h-screen flex items-center">
+              <div className="w-40 h-full">
+                <script
+                  type="text/javascript"
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                      atOptions = {
+                        'key' : 'ca77b3919db22954fff14719a4e43fcb',
+                        'format' : 'iframe',
+                        'height' : 600,
+                        'width' : 160,
+                        'params' : {}
+                      };
+                    `,
+                  }}
+                ></script>
+                <script
+                  type="text/javascript"
+                  src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
+                ></script>
               </div>
             </div>
-
+            <div className="flex-grow flex justify-center items-center">
+              {children}
+            </div>
+            <div className="fixed right-0 top-0 h-screen flex items-center">
+              <div className="w-40 h-full">
+                <script
+                  type="text/javascript"
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                      atOptions = {
+                        'key' : 'ca77b3919db22954fff14719a4e43fcb',
+                        'format' : 'iframe',
+                        'height' : 600,
+                        'width' : 160,
+                        'params' : {}
+                      };
+                    `,
+                  }}
+                ></script>
+                <script
+                  type="text/javascript"
+                  src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
+                ></script>
+              </div>
+            </div>
           </div>
         </ThemeProvider>
       </body>
