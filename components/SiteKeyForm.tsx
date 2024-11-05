@@ -62,7 +62,23 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
     }
 
     try {
-      const result = await getSiteKey(processedUrl);
+      const clientToken = btoa(crypto.randomUUID() + Date.now());
+      
+      const response = await fetch(`/api/getCaptcha?url=${encodeURIComponent(processedUrl)}`, {
+        method: 'GET',
+        headers: {
+          'x-client-token': clientToken,
+          'x-requested-with': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
       setResult(result);
     } catch (error) {
       setResult({
