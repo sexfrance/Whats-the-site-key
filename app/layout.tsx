@@ -44,7 +44,7 @@ export default function RootLayout({
             <div className="flex-grow flex justify-center items-center">
               {children}
             </div>
-            <div className="fixed pl-10 h-screen flex items-center">
+            <div className="fixed pr-10 h-screen flex items-center">
               <div className="pl-10">
                 <script
                   type="text/javascript"
