@@ -39,7 +39,7 @@ export default function RootLayout({
                 src="//www.highperformanceformat.com/ca77b3919db22954fff14719a4e43fcb/invoke.js"
               ></script>
             </div>
-            <div className="flex-grow flex fixed justify-center items-center">
+            <div className="flex-grow flex justify-center items-center px-4 sm:px-6 lg:px-8">
               {children}
             </div>
             <div className="fixed right-5 top-1/2 transform -translate-y-1/2 sm:right-5 sm:top-1/2 md:right-10 md:top-1/2">

@@ -8,6 +8,10 @@ interface CaptchaInfo {
   siteKey: string;
   captchaType: string;
   difficulty?: string;
+  variant?: string;
+  theme?: string;
+  size?: string;
+  action?: string;
   location: string;
   foundOn: string;
 }
@@ -55,63 +59,79 @@ async function crawlPage(
     };
 
     // Function to search for patterns in script tags and content
-    const searchPatterns = (
-      content: string
-    ): { type: string; key: string }[] => {
+    const searchPatterns = (content: string): { type: string; key: string; difficulty?: string; variant?: string; theme?: string; size?: string; action?: string }[] => {
       const patterns = [
-        // reCAPTCHA patterns
-        {
-          regex: /['"]?sitekey['"]?\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "reCAPTCHA",
+        // reCAPTCHA v2 patterns with extended attributes
+        { 
+          regex: /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"].*?data-size\s*=\s*['"]([^'"]+)['"].*?data-theme\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "reCAPTCHA v2",
+          withAttributes: true
         },
-        { regex: /render=([^&'"]+)/gi, type: "reCAPTCHA v3" },
+        // reCAPTCHA v2 patterns
+        { 
+          regex: /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"]/gi, 
+          type: "reCAPTCHA v2" 
+        },
+        { 
+          regex: /data-sitekey\s*=\s*['"]([^'"]+)['"]/gi, 
+          type: "reCAPTCHA v2" 
+        },
+        // reCAPTCHA v3 patterns
+        { 
+          regex: /grecaptcha\.execute\s*\(\s*['"]([^'"]+)['"]/gi, 
+          type: "reCAPTCHA v3" 
+        },
+        { 
+          regex: /recaptcha\/api\.js\?render=([^&'"]+)/gi, 
+          type: "reCAPTCHA v3" 
+        },
         // hCaptcha patterns
-        {
-          regex: /['"]?data-sitekey['"]?\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "hCaptcha",
-        },
-        { regex: /sitekey:\s*['"]([^'"]+)['"]/gi, type: "hCaptcha" },
+        { regex: /['"]?data-sitekey['"]?\s*=\\s*['"]([^'"]+)['"]/gi, type: "hCaptcha" },
+        { regex: /sitekey\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "hCaptcha" },
+        { regex: /hcaptcha\.com\/\w+\?(?:.*&)?key=([^&'"]+)/gi, type: "hCaptcha" },
+        
         // Turnstile patterns
-        {
-          regex: /turnstile\.render$$['"]([^'"]+)['"]$$/gi,
-          type: "Cloudflare Turnstile",
-        },
-        { regex: /data-sitekey=['"]([^'"]+)['"]/gi, type: "Unknown CAPTCHA" },
-        // Additional patterns for dynamic loading
-        {
-          regex: /captcha\.execute$$['"]([^'"]+)['"]$$/gi,
-          type: "Dynamic CAPTCHA",
-        },
-        { regex: /loadCaptcha$$['"]([^'"]+)['"]$$/gi, type: "Dynamic CAPTCHA" },
+        { regex: /turnstile\.render\(['"]([^'"]+)['"]\)/gi, type: "Cloudflare Turnstile" },
+        { regex: /data-sitekey\s*=\s*['"]([^'"]+)['"]\s+(?:class|data-action)=['"]cf-turnstile/gi, type: "Cloudflare Turnstile" },
+        
         // FriendlyCaptcha patterns
-        {
-          regex: /class="frc-captcha"\s+data-sitekey="([^"]+)"/gi,
-          type: "FriendlyCaptcha",
-        },
-        // GeeTest patterns
-        { regex: /gt:\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
+        { regex: /class="frc-captcha"[\s\w="']*data-sitekey="([^"]+)"/gi, type: "FriendlyCaptcha" },
+        { regex: /FriendlyCaptcha\.start\(['"]([^'"]+)['"]\)/gi, type: "FriendlyCaptcha" },
+        
+        // BotDetect patterns
+        { regex: /BotDetect\.Init\(['"]([^'"]+)['"]\)/gi, type: "BotDetect" },
+        
         // KeyCaptcha patterns
-        { regex: /s_s_c_user_id:\s*['"]([^'"]+)['"]/gi, type: "KeyCaptcha" },
-        // PerimeterX patterns
-        { regex: /PX_[A-Z0-9]+:\s*['"]([^'"]+)['"]/gi, type: "PerimeterX" },
-        // Generic configuration patterns
-        {
-          regex: /captcha_key['"]?\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "Generic CAPTCHA",
-        },
-        {
-          regex: /captchaKey['"]?\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "Generic CAPTCHA",
-        },
+        { regex: /s_s_c_user_id\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "KeyCaptcha" },
+        { regex: /keycaptcha-form.*?data-key=['"]([^'"]+)['"]/gi, type: "KeyCaptcha" },
+        
+        // GeeTest patterns
+        { regex: /gt\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
+        { regex: /initGeetest\({[\s\S]*?gt\s*:\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
+        
+        // Generic patterns
+        { regex: /captcha(?:_?[kK]ey|ID|Token)\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "Generic CAPTCHA" },
       ];
 
-      const results: { type: string; key: string }[] = [];
+      const results: { type: string; key: string; difficulty?: string; variant?: string; theme?: string; size?: string; action?: string }[] = [];
 
-      patterns.forEach(({ regex, type }) => {
-        const matches = content.matchAll(new RegExp(regex));
-        for (const match of matches) {
-          if (match[1] && !results.some((r) => r.key === match[1])) {
-            results.push({ type, key: match[1] });
+      patterns.forEach(({ regex, type, withAttributes }) => {
+        let match;
+        const regExp = new RegExp(regex);
+        while ((match = regExp.exec(content)) !== null) {
+          const key = match[1].trim();
+          if (key && !results.some((r) => r.key === key)) {
+            if (key.length > 5 && !/^[<>{}]/.test(key)) {
+              const result: any = { type, key };
+              
+              // Add additional attributes if available
+              if (withAttributes) {
+                if (match[2]) result.size = match[2];
+                if (match[3]) result.theme = match[3];
+              }
+              
+              results.push(result);
+            }
           }
         }
       });
@@ -119,8 +139,8 @@ async function crawlPage(
       return results;
     };
 
-    // Search in all script tags
-    $("script").each((_, elem) => {
+    // Search in all script tags and their sources
+    const scriptPromises = $("script").map(async (_, elem) => {
       const content = $(elem).html() || "";
       const src = $(elem).attr("src");
 
@@ -135,52 +155,108 @@ async function crawlPage(
         });
       });
 
-      // Check script src for API endpoints
+      // Check external script content
       if (src) {
-        if (src.includes("hcaptcha")) {
-          const key = src.match(/sitekey=([^&]+)/)?.[1];
-          if (key) {
-            captchas.push({
-              siteKey: key,
-              captchaType: "hCaptcha",
-              location: "Script Source",
-              foundOn: url,
-            });
+        try {
+          const scriptUrl = new URL(src, url).toString();
+          if (scriptUrl.includes("captcha") || scriptUrl.includes("security")) {
+            const response = await axios.get(scriptUrl, { timeout: 5000 });
+            const scriptContent = response.data;
+            if (typeof scriptContent === "string") {
+              const scriptResults = searchPatterns(scriptContent);
+              scriptResults.forEach(({ type, key }) => {
+                captchas.push({
+                  siteKey: key,
+                  captchaType: type,
+                  location: "External Script",
+                  foundOn: url,
+                });
+              });
+            }
           }
-        } else if (src.includes("recaptcha")) {
-          const key = src.match(/render=([^&]+)/)?.[1];
-          if (key) {
-            captchas.push({
-              siteKey: key,
-              captchaType: "reCAPTCHA v3",
-              location: "Script Source",
-              foundOn: url,
-            });
-          }
+        } catch (error) {
+          // Ignore external script errors
         }
       }
-    });
+    }).get();
 
-    // Search in HTML attributes
+    await Promise.all(scriptPromises);
+
+    // Enhanced HTML element search for reCAPTCHA
     $("[data-sitekey]").each((_, elem) => {
       const siteKey = $(elem).attr("data-sitekey");
       if (siteKey) {
-        const type = $(elem).hasClass("h-captcha")
-          ? "hCaptcha"
-          : $(elem).hasClass("g-recaptcha")
-          ? "reCAPTCHA"
-          : $(elem).hasClass("cf-turnstile")
-          ? "Cloudflare Turnstile"
-          : "Unknown CAPTCHA";
+        let type = "Unknown CAPTCHA";
+        let difficulty;
+        let theme;
+        let size;
+        let variant;
+
+        if ($(elem).hasClass("g-recaptcha")) {
+          type = "reCAPTCHA v2";
+          size = $(elem).attr("data-size") || "normal";
+          theme = $(elem).attr("data-theme") || "light";
+          
+          if (size === "invisible") {
+            difficulty = "invisible";
+            variant = "Invisible reCAPTCHA";
+          } else {
+            difficulty = "checkbox";
+            variant = "Checkbox reCAPTCHA";
+          }
+        } else if ($(elem).hasClass("h-captcha")) {
+          type = "hCaptcha";
+          theme = $(elem).attr("data-theme") || "light";
+          size = $(elem).attr("data-size") || "normal";
+          variant = size === "invisible" ? "Invisible hCaptcha" : "Challenge hCaptcha";
+        } else if ($(elem).hasClass("cf-turnstile")) {
+          type = "Cloudflare Turnstile";
+          theme = $(elem).attr("data-theme") || "light";
+          size = $(elem).attr("data-size") || "normal";
+          variant = $(elem).attr("data-appearance") || "Challenge";
+        }
 
         captchas.push({
           siteKey,
           captchaType: type,
+          difficulty,
+          variant,
+          theme,
+          size,
           location: "HTML Element",
           foundOn: url,
         });
       }
     });
+
+    // Check for reCAPTCHA v3 script tags
+    $("script[src*='recaptcha']").each((_, elem) => {
+      const src = $(elem).attr("src") || "";
+      if (src.includes("render=")) {
+        const key = src.match(/render=([^&]+)/)?.[1];
+        const action = src.match(/action=([^&]+)/)?.[1];
+        if (key) {
+          captchas.push({
+            siteKey: key,
+            captchaType: "reCAPTCHA v3",
+            difficulty: "score-based",
+            variant: "Invisible Score-based",
+            action: action || "default",
+            location: "Script Source",
+            foundOn: url,
+          });
+        }
+      }
+    });
+
+    // Check for enterprise reCAPTCHA
+    if (html.includes("enterprise.js") || html.includes("enterprise/")) {
+      captchas.forEach(captcha => {
+        if (captcha.captchaType.includes("reCAPTCHA")) {
+          captcha.captchaType += " Enterprise";
+        }
+      });
+    }
 
     // Find and crawl relevant links (login, register, auth pages)
     const relevantPaths = new Set<string>();
