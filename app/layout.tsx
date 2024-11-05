@@ -19,7 +19,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="flex justify-center items-start relative">
-            <div className="pl-10 ">
+            <div className="ml-10 my-auto">
               <div className="pl-10">
                 <script
                   type="text/javascript"
@@ -44,7 +44,7 @@ export default function RootLayout({
             <div className="flex-grow flex justify-center items-center">
               {children}
             </div>
-            <div className="pr-10">
+            <div className="mr-10 my-auto">
               <div className="pl-10">
                 <script
                   type="text/javascript"
@@ -67,7 +67,7 @@ export default function RootLayout({
               </div>
             </div>
           </div>
-          <div className="flex mt-[-50px] justify-center">
+          <div className="flex mt-[-20px] justify-center">
             <script
               type="text/javascript"
               dangerouslySetInnerHTML={{
