@@ -67,6 +67,26 @@ export default function RootLayout({
               </div>
             </div>
           </div>
+          <div className="flex justify-center mt-5">
+            <script
+              type="text/javascript"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  atOptions = {
+                    'key' : '2aa5dd87245064af79eff4d487110df0',
+                    'format' : 'iframe',
+                    'height' : 90,
+                    'width' : 728,
+                    'params' : {}
+                  };
+                `,
+              }}
+            ></script>
+            <script
+              type="text/javascript"
+              src="//www.highperformanceformat.com/2aa5dd87245064af79eff4d487110df0/invoke.js"
+            ></script>
+          </div>
         </ThemeProvider>
       </body>
     </html>
