@@ -137,7 +137,7 @@ func getCaptcha(url string) (map[string]interface{}, error) {
     var result map[string]interface{}
     json.NewDecoder(resp.Body).Decode(&result)
     return result, nil
-}`
+}`,
 };
 
 const EXAMPLE_RESPONSE = {

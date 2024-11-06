@@ -38,6 +38,15 @@ interface SiteKeyFormProps {
   getSiteKey: (url: string) => Promise<CaptchaResult>;
 }
 
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (callback: () => void) => void;
+      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 export default function Component({ getSiteKey }: SiteKeyFormProps) {
   const [url, setUrl] = React.useState("");
   const [result, setResult] = React.useState<CaptchaResult | null>(null);
@@ -64,12 +73,27 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
     try {
       const clientToken = btoa(crypto.randomUUID() + Date.now());
       
+      const recaptchaToken = await new Promise<string>((resolve, reject) => {
+        window.grecaptcha.ready(async () => {
+          try {
+            const token = await window.grecaptcha.execute(
+              process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!, 
+              { action: 'submit' }
+            );
+            resolve(token);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+
       const response = await fetch(`/api/getCaptcha?url=${encodeURIComponent(processedUrl)}`, {
         method: 'GET',
         headers: {
           'x-client-token': clientToken,
           'x-requested-with': 'XMLHttpRequest',
           'Accept': 'application/json',
+          'x-recaptcha-token': recaptchaToken,
         },
         credentials: 'same-origin',
       });
