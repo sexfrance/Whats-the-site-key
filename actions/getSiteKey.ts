@@ -47,6 +47,7 @@ async function crawlPage(
     const html = response.data;
     const $ = cheerio.load(html);
     const captchas: CaptchaInfo[] = [];
+    const captchaSet = new Set<string>(); // To track unique captchas
 
     // Function to clean and normalize URLs
     const normalizeUrl = (href: string) => {
@@ -147,12 +148,16 @@ async function crawlPage(
       // Check inline script content
       const inlineResults = searchPatterns(content);
       inlineResults.forEach(({ type, key }) => {
-        captchas.push({
-          siteKey: key,
-          captchaType: type,
-          location: "Script Content",
-          foundOn: url,
-        });
+        const uniqueKey = `${key}-${type}-Script Content`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey: key,
+            captchaType: type,
+            location: "Script Content",
+            foundOn: url,
+          });
+        }
       });
 
       // Check external script content
@@ -165,12 +170,16 @@ async function crawlPage(
             if (typeof scriptContent === "string") {
               const scriptResults = searchPatterns(scriptContent);
               scriptResults.forEach(({ type, key }) => {
-                captchas.push({
-                  siteKey: key,
-                  captchaType: type,
-                  location: "External Script",
-                  foundOn: url,
-                });
+                const uniqueKey = `${key}-${type}-External Script`;
+                if (!captchaSet.has(uniqueKey)) {
+                  captchaSet.add(uniqueKey);
+                  captchas.push({
+                    siteKey: key,
+                    captchaType: type,
+                    location: "External Script",
+                    foundOn: url,
+                  });
+                }
               });
             }
           }
@@ -216,16 +225,20 @@ async function crawlPage(
           variant = $(elem).attr("data-appearance") || "Challenge";
         }
 
-        captchas.push({
-          siteKey,
-          captchaType: type,
-          difficulty,
-          variant,
-          theme,
-          size,
-          location: "HTML Element",
-          foundOn: url,
-        });
+        const uniqueKey = `${siteKey}-${type}-HTML Element`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey,
+            captchaType: type,
+            difficulty,
+            variant,
+            theme,
+            size,
+            location: "HTML Element",
+            foundOn: url,
+          });
+        }
       }
     });
 
@@ -235,7 +248,9 @@ async function crawlPage(
       if (src.includes("render=")) {
         const key = src.match(/render=([^&]+)/)?.[1];
         const action = src.match(/action=([^&]+)/)?.[1];
-        if (key) {
+        const uniqueKey = `${key}-reCAPTCHA v3-Script Source`;
+        if (key && !captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
           captchas.push({
             siteKey: key,
             captchaType: "reCAPTCHA v3",
