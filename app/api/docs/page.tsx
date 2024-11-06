@@ -172,7 +172,7 @@ export default function ApiDocs() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-background w-full">
+    <div className="min-h-screen bg-background w-full transition-colors duration-300">
       <div className="max-w-[90rem] mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-bold">API Documentation</h1>

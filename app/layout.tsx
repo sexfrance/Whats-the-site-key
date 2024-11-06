@@ -119,7 +119,7 @@ export default function RootLayout({
           src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} transition-colors duration-300`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="flex justify-center min-h-screen items-start relative">
             <div className="fixed left-5 top-1/2 transform -translate-y-1/2 sm:left-5 sm:top-1/2 md:left-10 md:top-1/2">
