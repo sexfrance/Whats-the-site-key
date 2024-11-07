@@ -521,6 +521,131 @@ async function crawlPage(
       }
     });
 
+    // Enhanced FunCaptcha (Arkose Labs) patterns
+    const patterns = [
+      // ... other existing patterns ...
+
+      // Enhanced FunCaptcha (Arkose Labs) patterns
+      {
+        regex: /public_key\s*[:=]\s*['"]([^'"]+)['"]/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /data-pkey\s*=\s*['"]([^'"]+)['"]/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /\bpkey\s*[:=]\s*['"]([^'"]+)['"]/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /arkose\.render\s*\(\s*{\s*[^}]*publicKey\s*:\s*['"]([^'"]+)['"]/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /arkose\.render\s*\(\s*{\s*[^}]*pkey\s*:\s*['"]([^'"]+)['"]/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /api\.funcaptcha\.com\/fc\/gt2\/public_key\/([^/'"]+)/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /api\.arkoselabs\.com\/fc\/gt2\/public_key\/([^/'"]+)/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /api\.funcaptcha\.com\/fc\/api\/nojs\/\?pkey=([^&'"]+)/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /fc-token=([^&'"]+)/gi,
+        type: "FunCaptcha"
+      },
+      {
+        regex: /data-callback-uri\s*=\s*['"](?:[^'"]*public_key=|[^'"]*pkey=)([^&'"]+)['"]/gi,
+        type: "FunCaptcha"
+      },
+    ];
+
+    // Add this to the HTML element search section
+    $("iframe[src*='funcaptcha'], iframe[src*='arkoselabs'], div[data-pkey], div[class*='funcaptcha'], div[class*='arkoselabs']").each((_, elem) => {
+      let siteKey;
+      const src = $(elem).attr('src') || '';
+      const pkey = $(elem).attr('data-pkey');
+      
+      // Check for pkey in data attribute
+      if (pkey) {
+        siteKey = pkey;
+      } 
+      // Check for pkey in src URL
+      else if (src) {
+        const pkeyMatch = src.match(/(?:public_key|pkey)=([^&]+)/);
+        if (pkeyMatch) {
+          siteKey = pkeyMatch[1];
+        }
+      }
+
+      if (siteKey) {
+        const uniqueKey = `${siteKey}-FunCaptcha-Element`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey,
+            captchaType: "FunCaptcha",
+            location: "HTML Element",
+            foundOn: url,
+          });
+        }
+      }
+    });
+
+    // Add this to the script source checking section
+    $("script").each((_, elem) => {
+      const content = $(elem).html() || '';
+      const src = $(elem).attr('src') || '';
+
+      // Check for FunCaptcha initialization in inline scripts
+      if (content.includes('arkose') || content.includes('funcaptcha')) {
+        const matches = content.match(/(?:public_key|pkey)\s*[:=]\s*['"]([^'"]+)['"]/gi);
+        if (matches) {
+          matches.forEach(match => {
+            const key = match.match(/['"]([^'"]+)['"]/)?.[1];
+            if (key) {
+              const uniqueKey = `${key}-FunCaptcha-Script`;
+              if (!captchaSet.has(uniqueKey)) {
+                captchaSet.add(uniqueKey);
+                captchas.push({
+                  siteKey: key,
+                  captchaType: "FunCaptcha",
+                  location: "Script Content",
+                  foundOn: url,
+                });
+              }
+            }
+          });
+        }
+      }
+
+      // Check for FunCaptcha in external scripts
+      if (src.includes('funcaptcha') || src.includes('arkoselabs')) {
+        const pkeyMatch = src.match(/(?:public_key|pkey)=([^&]+)/);
+        if (pkeyMatch) {
+          const key = pkeyMatch[1];
+          const uniqueKey = `${key}-FunCaptcha-External`;
+          if (!captchaSet.has(uniqueKey)) {
+            captchaSet.add(uniqueKey);
+            captchas.push({
+              siteKey: key,
+              captchaType: "FunCaptcha",
+              location: "External Script",
+              foundOn: url,
+            });
+          }
+        }
+      }
+    });
+
     return captchas;
   } catch (error) {
     console.error(`Error crawling ${url}:`, error);
