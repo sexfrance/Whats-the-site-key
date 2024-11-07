@@ -60,78 +60,111 @@ async function crawlPage(
     };
 
     // Function to search for patterns in script tags and content
-    const searchPatterns = (content: string): { type: string; key: string; difficulty?: string; variant?: string; theme?: string; size?: string; action?: string }[] => {
+    const searchPatterns = (
+      content: string
+    ): {
+      type: string;
+      key: string;
+      difficulty?: string;
+      variant?: string;
+      theme?: string;
+      size?: string;
+      action?: string;
+    }[] => {
       const patterns = [
         // reCAPTCHA v2 patterns with extended attributes
-        { 
-          regex: /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"].*?data-size\s*=\s*['"]([^'"]+)['"].*?data-theme\s*=\s*['"]([^'"]+)['"]/gi,
+        {
+          regex:
+            /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"].*?data-size\s*=\s*['"]([^'"]+)['"].*?data-theme\s*=\s*['"]([^'"]+)['"]/gi,
           type: "reCAPTCHA v2",
-          withAttributes: true
+          withAttributes: true,
         },
         // reCAPTCHA v2 patterns
-        { 
-          regex: /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"]/gi, 
-          type: "reCAPTCHA v2" 
+        {
+          regex: /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"]/gi,
+          type: "reCAPTCHA v2",
         },
-        { 
-          regex: /data-sitekey\s*=\s*['"]([^'"]+)['"]/gi, 
-          type: "reCAPTCHA v2" 
+        {
+          regex: /data-sitekey\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "reCAPTCHA v2",
         },
         // reCAPTCHA v3 patterns
-        { 
-          regex: /grecaptcha\.execute\s*\(\s*['"]([^'"]+)['"]/gi, 
-          type: "reCAPTCHA v3" 
+        {
+          regex: /grecaptcha\.execute\s*\(\s*['"]([^'"]+)['"]/gi,
+          type: "reCAPTCHA v3",
         },
-        { 
-          regex: /recaptcha\/api\.js\?render=([^&'"]+)/gi, 
-          type: "reCAPTCHA v3" 
+        {
+          regex: /recaptcha\/api\.js\?render=([^&'"]+)/gi,
+          type: "reCAPTCHA v3",
         },
         // hCaptcha patterns
-        { regex: /['"]?data-sitekey['"]?\s*=\\s*['"]([^'"]+)['"]/gi, type: "hCaptcha" },
+        {
+          regex: /['"]?data-sitekey['"]?\s*=\\s*['"]([^'"]+)['"]/gi,
+          type: "hCaptcha",
+        },
         { regex: /sitekey\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "hCaptcha" },
-        { regex: /hcaptcha\.com\/\w+\?(?:.*&)?key=([^&'"]+)/gi, type: "hCaptcha" },
-        
+        {
+          regex: /hcaptcha\.com\/\w+\?(?:.*&)?key=([^&'"]+)/gi,
+          type: "hCaptcha",
+        },
+
         // Turnstile patterns
-        { regex: /turnstile\.render\(['"]([^'"]+)['"]\)/gi, type: "Cloudflare Turnstile" },
-        { regex: /data-sitekey\s*=\s*['"]([^'"]+)['"]\s+(?:class|data-action)=['"]cf-turnstile/gi, type: "Cloudflare Turnstile" },
-        
+        {
+          regex: /turnstile\.render\(['"]([^'"]+)['"]\)/gi,
+          type: "Cloudflare Turnstile",
+        },
+        {
+          regex:
+            /data-sitekey\s*=\s*['"]([^'"]+)['"]\s+(?:class|data-action)=['"]cf-turnstile/gi,
+          type: "Cloudflare Turnstile",
+        },
+
         // FriendlyCaptcha patterns
-        { regex: /class="frc-captcha"[\s\w="']*data-sitekey="([^"]+)"/gi, type: "FriendlyCaptcha" },
-        { regex: /FriendlyCaptcha\.start\(['"]([^'"]+)['"]\)/gi, type: "FriendlyCaptcha" },
-        
+        {
+          regex: /class="frc-captcha"[\s\w="']*data-sitekey="([^"]+)"/gi,
+          type: "FriendlyCaptcha",
+        },
+        {
+          regex: /FriendlyCaptcha\.start\(['"]([^'"]+)['"]\)/gi,
+          type: "FriendlyCaptcha",
+        },
+
         // BotDetect patterns
         { regex: /BotDetect\.Init\(['"]([^'"]+)['"]\)/gi, type: "BotDetect" },
-        
+
         // KeyCaptcha patterns
-        { regex: /s_s_c_user_id\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "KeyCaptcha" },
-        { regex: /keycaptcha-form.*?data-key=['"]([^'"]+)['"]/gi, type: "KeyCaptcha" },
-        
+        {
+          regex: /s_s_c_user_id\s*[:=]\s*['"]([^'"]+)['"]/gi,
+          type: "KeyCaptcha",
+        },
+        {
+          regex: /keycaptcha-form.*?data-key=['"]([^'"]+)['"]/gi,
+          type: "KeyCaptcha",
+        },
+
         // GeeTest patterns
         { regex: /gt\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
-        { regex: /initGeetest\({[\s\S]*?gt\s*:\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
-        
-        // FunCaptcha patterns
-        { regex: /data-pkey\s*=\s*['"]([^'"]+)['"]/gi, type: "FunCaptcha" },
-        { regex: /funcaptcha\.com\/fc\/api\/\?pkey=([^&'"]+)/gi, type: "FunCaptcha" },
-        
-        // PerimeterX patterns
-        { regex: /_pxCaptcha\s*=\s*['"]([^'"]+)['"]/gi, type: "PerimeterX" },
-        { regex: /client\.perimeterx\.net\/captcha\/([^\/'"]+)/gi, type: "PerimeterX" },
-        
-        // Akamai Bot Manager patterns
-        { regex: /abck=([^;]+)/gi, type: "Akamai Bot Manager" },
-        
-        // Distil Networks patterns
-        { regex: /distil_r_captcha\s*=\s*['"]([^'"]+)['"]/gi, type: "Distil Networks" },
-        
-        // Imperva Incapsula patterns
-        { regex: /incap_ses\s*=\s*['"]([^'"]+)['"]/gi, type: "Imperva Incapsula" },
-        
+        {
+          regex: /initGeetest\({[\s\S]*?gt\s*:\s*['"]([^'"]+)['"]/gi,
+          type: "GeeTest",
+        },
+
         // Generic patterns
-        { regex: /captcha(?:_?[kK]ey|ID|Token)\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "Generic CAPTCHA" },
+        {
+          regex: /captcha(?:_?[kK]ey|ID|Token)\s*[:=]\s*['"]([^'"]+)['"]/gi,
+          type: "Generic CAPTCHA",
+        },
       ];
 
-      const results: { type: string; key: string; difficulty?: string; variant?: string; theme?: string; size?: string; action?: string }[] = [];
+      const results: {
+        type: string;
+        key: string;
+        difficulty?: string;
+        variant?: string;
+        theme?: string;
+        size?: string;
+        action?: string;
+      }[] = [];
 
       patterns.forEach(({ regex, type, withAttributes }) => {
         let match;
@@ -141,13 +174,13 @@ async function crawlPage(
           if (key && !results.some((r) => r.key === key)) {
             if (key.length > 5 && !/^[<>{}]/.test(key)) {
               const result: any = { type, key };
-              
+
               // Add additional attributes if available
               if (withAttributes) {
                 if (match[2]) result.size = match[2];
                 if (match[3]) result.theme = match[3];
               }
-              
+
               results.push(result);
             }
           }
@@ -158,53 +191,58 @@ async function crawlPage(
     };
 
     // Search in all script tags and their sources
-    const scriptPromises = $("script").map(async (_, elem) => {
-      const content = $(elem).html() || "";
-      const src = $(elem).attr("src");
+    const scriptPromises = $("script")
+      .map(async (_, elem) => {
+        const content = $(elem).html() || "";
+        const src = $(elem).attr("src");
 
-      // Check inline script content
-      const inlineResults = searchPatterns(content);
-      inlineResults.forEach(({ type, key }) => {
-        const uniqueKey = `${key}-${type}-Script Content`;
-        if (!captchaSet.has(uniqueKey)) {
-          captchaSet.add(uniqueKey);
-          captchas.push({
-            siteKey: key,
-            captchaType: type,
-            location: "Script Content",
-            foundOn: url,
-          });
-        }
-      });
-
-      // Check external script content
-      if (src) {
-        try {
-          const scriptUrl = new URL(src, url).toString();
-          if (scriptUrl.includes("captcha") || scriptUrl.includes("security")) {
-            const response = await axios.get(scriptUrl, { timeout: 5000 });
-            const scriptContent = response.data;
-            if (typeof scriptContent === "string") {
-              const scriptResults = searchPatterns(scriptContent);
-              scriptResults.forEach(({ type, key }) => {
-                const uniqueKey = `${key}-${type}-External Script`;
-                if (!captchaSet.has(uniqueKey)) {
-                  captchaSet.add(uniqueKey);
-                  captchas.push({
-                    siteKey: key,
-                    captchaType: type,
-                    location: "External Script",
-                    foundOn: url,
-                  });
-                }
-              });
-            }
+        // Check inline script content
+        const inlineResults = searchPatterns(content);
+        inlineResults.forEach(({ type, key }) => {
+          const uniqueKey = `${key}-${type}-Script Content`;
+          if (!captchaSet.has(uniqueKey)) {
+            captchaSet.add(uniqueKey);
+            captchas.push({
+              siteKey: key,
+              captchaType: type,
+              location: "Script Content",
+              foundOn: url,
+            });
           }
-        } catch (error) {
-          // Ignore external script errors
+        });
+
+        // Check external script content
+        if (src) {
+          try {
+            const scriptUrl = new URL(src, url).toString();
+            if (
+              scriptUrl.includes("captcha") ||
+              scriptUrl.includes("security")
+            ) {
+              const response = await axios.get(scriptUrl, { timeout: 5000 });
+              const scriptContent = response.data;
+              if (typeof scriptContent === "string") {
+                const scriptResults = searchPatterns(scriptContent);
+                scriptResults.forEach(({ type, key }) => {
+                  const uniqueKey = `${key}-${type}-External Script`;
+                  if (!captchaSet.has(uniqueKey)) {
+                    captchaSet.add(uniqueKey);
+                    captchas.push({
+                      siteKey: key,
+                      captchaType: type,
+                      location: "External Script",
+                      foundOn: url,
+                    });
+                  }
+                });
+              }
+            }
+          } catch (error) {
+            // Ignore external script errors
+          }
         }
-      }
-    }).get();
+      })
+      .get();
 
     await Promise.all(scriptPromises);
 
@@ -222,7 +260,7 @@ async function crawlPage(
           type = "reCAPTCHA v2";
           size = $(elem).attr("data-size") || "normal";
           theme = $(elem).attr("data-theme") || "light";
-          
+
           if (size === "invisible") {
             difficulty = "invisible";
             variant = "Invisible reCAPTCHA";
@@ -234,7 +272,8 @@ async function crawlPage(
           type = "hCaptcha";
           theme = $(elem).attr("data-theme") || "light";
           size = $(elem).attr("data-size") || "normal";
-          variant = size === "invisible" ? "Invisible hCaptcha" : "Challenge hCaptcha";
+          variant =
+            size === "invisible" ? "Invisible hCaptcha" : "Challenge hCaptcha";
         } else if ($(elem).hasClass("cf-turnstile")) {
           type = "Cloudflare Turnstile";
           theme = $(elem).attr("data-theme") || "light";
@@ -283,7 +322,7 @@ async function crawlPage(
 
     // Check for enterprise reCAPTCHA
     if (html.includes("enterprise.js") || html.includes("enterprise/")) {
-      captchas.forEach(captcha => {
+      captchas.forEach((captcha) => {
         if (captcha.captchaType.includes("reCAPTCHA")) {
           captcha.captchaType += " Enterprise";
         }
