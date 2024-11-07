@@ -110,6 +110,23 @@ async function crawlPage(
         { regex: /gt\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
         { regex: /initGeetest\({[\s\S]*?gt\s*:\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
         
+        // FunCaptcha patterns
+        { regex: /data-pkey\s*=\s*['"]([^'"]+)['"]/gi, type: "FunCaptcha" },
+        { regex: /funcaptcha\.com\/fc\/api\/\?pkey=([^&'"]+)/gi, type: "FunCaptcha" },
+        
+        // PerimeterX patterns
+        { regex: /_pxCaptcha\s*=\s*['"]([^'"]+)['"]/gi, type: "PerimeterX" },
+        { regex: /client\.perimeterx\.net\/captcha\/([^\/'"]+)/gi, type: "PerimeterX" },
+        
+        // Akamai Bot Manager patterns
+        { regex: /abck=([^;]+)/gi, type: "Akamai Bot Manager" },
+        
+        // Distil Networks patterns
+        { regex: /distil_r_captcha\s*=\s*['"]([^'"]+)['"]/gi, type: "Distil Networks" },
+        
+        // Imperva Incapsula patterns
+        { regex: /incap_ses\s*=\s*['"]([^'"]+)['"]/gi, type: "Imperva Incapsula" },
+        
         // Generic patterns
         { regex: /captcha(?:_?[kK]ey|ID|Token)\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "Generic CAPTCHA" },
       ];
