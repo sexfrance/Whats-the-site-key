@@ -525,45 +525,17 @@ async function crawlPage(
     const patterns = [
       // ... other existing patterns ...
 
-      // Enhanced FunCaptcha (Arkose Labs) patterns
+      // Arkose Labs specific patterns
       {
-        regex: /public_key\s*[:=]\s*['"]([^'"]+)['"]/gi,
+        regex: /[?&]key=([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
         type: "FunCaptcha"
       },
       {
-        regex: /data-pkey\s*=\s*['"]([^'"]+)['"]/gi,
+        regex: /enforcement\.arkoselabs\.com\/[^/]+\/([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
         type: "FunCaptcha"
       },
       {
-        regex: /\bpkey\s*[:=]\s*['"]([^'"]+)['"]/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /arkose\.render\s*\(\s*{\s*[^}]*publicKey\s*:\s*['"]([^'"]+)['"]/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /arkose\.render\s*\(\s*{\s*[^}]*pkey\s*:\s*['"]([^'"]+)['"]/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /api\.funcaptcha\.com\/fc\/gt2\/public_key\/([^/'"]+)/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /api\.arkoselabs\.com\/fc\/gt2\/public_key\/([^/'"]+)/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /api\.funcaptcha\.com\/fc\/api\/nojs\/\?pkey=([^&'"]+)/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /fc-token=([^&'"]+)/gi,
-        type: "FunCaptcha"
-      },
-      {
-        regex: /data-callback-uri\s*=\s*['"](?:[^'"]*public_key=|[^'"]*pkey=)([^&'"]+)['"]/gi,
+        regex: /data-arkose-key\s*=\s*['"]([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})['"]/i,
         type: "FunCaptcha"
       },
     ];
@@ -645,6 +617,26 @@ async function crawlPage(
         }
       }
     });
+
+    // Add URL parameter check
+    try {
+      const urlParams = new URL(url).searchParams;
+      const keyParam = urlParams.get('key');
+      if (keyParam && /^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/i.test(keyParam)) {
+        const uniqueKey = `${keyParam}-FunCaptcha-URL`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey: keyParam,
+            captchaType: "FunCaptcha",
+            location: "URL Parameter",
+            foundOn: url,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing URL parameters:', error);
+    }
 
     return captchas;
   } catch (error) {
