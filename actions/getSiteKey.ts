@@ -154,6 +154,78 @@ async function crawlPage(
           regex: /captcha(?:_?[kK]ey|ID|Token)\s*[:=]\s*['"]([^'"]+)['"]/gi,
           type: "Generic CAPTCHA",
         },
+
+        // FunCaptcha (Arkose Labs) patterns
+        {
+          regex: /data-pkey\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "FunCaptcha",
+        },
+        {
+          regex: /arkose\.enableEnforcement\s*\(\s*['"]([^'"]+)['"]/gi,
+          type: "FunCaptcha",
+        },
+        {
+          regex: /arkose\.setConfig\s*\(\s*{\s*[^}]*public_key\s*:\s*['"]([^'"]+)['"]/gi,
+          type: "FunCaptcha",
+        },
+        {
+          regex: /arkoselabs\.com\/fc\/api\/\?onload=loadChallenge&public_key=([^&'"]+)/gi,
+          type: "FunCaptcha",
+        },
+
+        // PerimeterX patterns
+        {
+          regex: /PX\.init\s*\(\s*{\s*[^}]*appId\s*:\s*['"]([^'"]+)['"]/gi,
+          type: "PerimeterX",
+        },
+        {
+          regex: /px-cdn\.net\/([^/'"]+)/gi,
+          type: "PerimeterX",
+        },
+        {
+          regex: /data-px-appid\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "PerimeterX",
+        },
+
+        // DataDome patterns
+        {
+          regex: /datadome\.co\/captcha\/\?initialCid=([^&'"]+)/gi,
+          type: "DataDome",
+        },
+        {
+          regex: /DataDomeOptions\s*=\s*{\s*[^}]*apiKey\s*:\s*['"]([^'"]+)['"]/gi,
+          type: "DataDome",
+        },
+
+        // Arkose Enterprise patterns
+        {
+          regex: /api\.arkoselabs\.com\/v2\/([^/'"]+)/gi,
+          type: "Arkose Enterprise",
+        },
+        {
+          regex: /data-arkose-public-key\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "Arkose Enterprise",
+        },
+
+        // MTCaptcha patterns
+        {
+          regex: /mtcaptcha\.com\/mtcv1\/[^/'"]*\?sitekey=([^&'"]+)/gi,
+          type: "MTCaptcha",
+        },
+        {
+          regex: /data-mtcaptcha-sitekey\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "MTCaptcha",
+        },
+
+        // AWS WAF CAPTCHA patterns
+        {
+          regex: /aws-waf-token\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "AWS WAF CAPTCHA",
+        },
+        {
+          regex: /data-waf-token\s*=\s*['"]([^'"]+)['"]/gi,
+          type: "AWS WAF CAPTCHA",
+        },
       ];
 
       const results: {
@@ -369,6 +441,85 @@ async function crawlPage(
         captchas.push(...nestedCaptchas);
       }
     }
+
+    // Add additional HTML element search
+    $("[data-pkey], [data-px-appid], [data-arkose-public-key], [data-mtcaptcha-sitekey]").each((_, elem) => {
+      let siteKey;
+      let type;
+
+      if ($(elem).attr("data-pkey")) {
+        siteKey = $(elem).attr("data-pkey");
+        type = "FunCaptcha";
+      } else if ($(elem).attr("data-px-appid")) {
+        siteKey = $(elem).attr("data-px-appid");
+        type = "PerimeterX";
+      } else if ($(elem).attr("data-arkose-public-key")) {
+        siteKey = $(elem).attr("data-arkose-public-key");
+        type = "Arkose Enterprise";
+      } else if ($(elem).attr("data-mtcaptcha-sitekey")) {
+        siteKey = $(elem).attr("data-mtcaptcha-sitekey");
+        type = "MTCaptcha";
+      }
+
+      if (siteKey) {
+        const uniqueKey = `${siteKey}-${type}-HTML Element`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey: siteKey!, // Assert siteKey is non-null since we check above
+            captchaType: type!, // Assert type is non-null since it's set with siteKey
+            location: "HTML Element",
+            foundOn: url,
+          });
+        }
+      }
+    });
+
+    // Add script source checking for additional CAPTCHA types
+    $("script[src*='arkoselabs'], script[src*='perimeterx'], script[src*='datadome'], script[src*='mtcaptcha']").each((_, elem) => {
+      const src = $(elem).attr("src") || "";
+      let key;
+      let type;
+
+      if (src.includes("arkoselabs.com")) {
+        const match = src.match(/public_key=([^&]+)/);
+        if (match) {
+          key = match[1];
+          type = src.includes("/v2/") ? "Arkose Enterprise" : "FunCaptcha";
+        }
+      } else if (src.includes("perimeterx")) {
+        const match = src.match(/px-cdn\.net\/([^/]+)/);
+        if (match) {
+          key = match[1];
+          type = "PerimeterX";
+        }
+      } else if (src.includes("datadome")) {
+        const match = src.match(/initialCid=([^&]+)/);
+        if (match) {
+          key = match[1];
+          type = "DataDome";
+        }
+      } else if (src.includes("mtcaptcha")) {
+        const match = src.match(/sitekey=([^&]+)/);
+        if (match) {
+          key = match[1];
+          type = "MTCaptcha";
+        }
+      }
+
+      if (key) {
+        const uniqueKey = `${key}-${type}-Script Source`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey: key!, // Assert key is non-null since we check above
+            captchaType: type!, // Assert type is non-null since it's set with key
+            location: "Script Source",
+            foundOn: url,
+          });
+        }
+      }
+    });
 
     return captchas;
   } catch (error) {
