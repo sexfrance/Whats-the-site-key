@@ -72,160 +72,45 @@ async function crawlPage(
       action?: string;
     }[] => {
       const patterns = [
-        // reCAPTCHA v2 patterns with extended attributes
+        // Cloudflare Turnstile patterns - Put these first for priority
         {
-          regex:
-            /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"].*?data-size\s*=\s*['"]([^'"]+)['"].*?data-theme\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "reCAPTCHA v2",
-          withAttributes: true,
-        },
-        // reCAPTCHA v2 patterns
-        {
-          regex: /['"]?sitekey['"]?\s*[:=]\s*['"]([^'"]+)['"]/gi,
-          type: "reCAPTCHA v2",
+          regex: /turnstile\.render\s*\(\s*['"]([^'"]+)['"]/gi,
+          type: "Cloudflare Turnstile",
         },
         {
-          regex: /data-sitekey\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "reCAPTCHA v2",
-        },
-        // reCAPTCHA v3 patterns
-        {
-          regex: /grecaptcha\.execute\s*\(\s*['"]([^'"]+)['"]/gi,
-          type: "reCAPTCHA v3",
+          regex: /data-cf-turnstile=["']([^'"]+)["']/gi,
+          type: "Cloudflare Turnstile",
         },
         {
-          regex: /recaptcha\/api\.js\?render=([^&'"]+)/gi,
-          type: "reCAPTCHA v3",
-        },
-        // hCaptcha patterns
-        {
-          regex: /['"]?data-sitekey['"]?\s*=\\s*['"]([^'"]+)['"]/gi,
-          type: "hCaptcha",
-        },
-        { regex: /sitekey\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "hCaptcha" },
-        {
-          regex: /hcaptcha\.com\/\w+\?(?:.*&)?key=([^&'"]+)/gi,
-          type: "hCaptcha",
-        },
-
-        // Turnstile patterns
-        {
-          regex: /turnstile\.render\(['"]([^'"]+)['"]\)/gi,
+          regex: /data-turnstile-key=["']([^'"]+)["']/gi,
           type: "Cloudflare Turnstile",
         },
         {
           regex:
-            /data-sitekey\s*=\s*['"]([^'"]+)['"]\s+(?:class|data-action)=['"]cf-turnstile/gi,
+            /data-sitekey=["']([^'"]+)["'](?:[^>]*class=["'][^"']*cf-turnstile|[^>]*data-action)/gi,
+          type: "Cloudflare Turnstile",
+        },
+        {
+          regex:
+            /class=["'][^"']*cf-turnstile[^"']*["'][^>]*data-sitekey=["']([^'"]+)["']/gi,
+          type: "Cloudflare Turnstile",
+        },
+        {
+          regex: /turnstile\.getResponse\s*\(\s*['"]([^'"]+)['"]\)/gi,
           type: "Cloudflare Turnstile",
         },
 
-        // FriendlyCaptcha patterns
+        // reCAPTCHA patterns - Move these after Turnstile patterns
         {
-          regex: /class="frc-captcha"[\s\w="']*data-sitekey="([^"]+)"/gi,
-          type: "FriendlyCaptcha",
+          regex:
+            /class=["']g-recaptcha["'][^>]*data-sitekey=["']([^'"]+)["']/gi,
+          type: "reCAPTCHA v2",
         },
         {
-          regex: /FriendlyCaptcha\.start\(['"]([^'"]+)['"]\)/gi,
-          type: "FriendlyCaptcha",
+          regex: /grecaptcha\.render\s*\(\s*['"]([^'"]+)['"]/gi,
+          type: "reCAPTCHA v2",
         },
-
-        // BotDetect patterns
-        { regex: /BotDetect\.Init\(['"]([^'"]+)['"]\)/gi, type: "BotDetect" },
-
-        // KeyCaptcha patterns
-        {
-          regex: /s_s_c_user_id\s*[:=]\s*['"]([^'"]+)['"]/gi,
-          type: "KeyCaptcha",
-        },
-        {
-          regex: /keycaptcha-form.*?data-key=['"]([^'"]+)['"]/gi,
-          type: "KeyCaptcha",
-        },
-
-        // GeeTest patterns
-        { regex: /gt\s*[:=]\s*['"]([^'"]+)['"]/gi, type: "GeeTest" },
-        {
-          regex: /initGeetest\({[\s\S]*?gt\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "GeeTest",
-        },
-
-        // Generic patterns
-        {
-          regex: /captcha(?:_?[kK]ey|ID|Token)\s*[:=]\s*['"]([^'"]+)['"]/gi,
-          type: "Generic CAPTCHA",
-        },
-
-        // FunCaptcha (Arkose Labs) patterns
-        {
-          regex: /data-pkey\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "FunCaptcha",
-        },
-        {
-          regex: /arkose\.enableEnforcement\s*\(\s*['"]([^'"]+)['"]/gi,
-          type: "FunCaptcha",
-        },
-        {
-          regex: /arkose\.setConfig\s*\(\s*{\s*[^}]*public_key\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "FunCaptcha",
-        },
-        {
-          regex: /arkoselabs\.com\/fc\/api\/\?onload=loadChallenge&public_key=([^&'"]+)/gi,
-          type: "FunCaptcha",
-        },
-
-        // PerimeterX patterns
-        {
-          regex: /PX\.init\s*\(\s*{\s*[^}]*appId\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "PerimeterX",
-        },
-        {
-          regex: /px-cdn\.net\/([^/'"]+)/gi,
-          type: "PerimeterX",
-        },
-        {
-          regex: /data-px-appid\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "PerimeterX",
-        },
-
-        // DataDome patterns
-        {
-          regex: /datadome\.co\/captcha\/\?initialCid=([^&'"]+)/gi,
-          type: "DataDome",
-        },
-        {
-          regex: /DataDomeOptions\s*=\s*{\s*[^}]*apiKey\s*:\s*['"]([^'"]+)['"]/gi,
-          type: "DataDome",
-        },
-
-        // Arkose Enterprise patterns
-        {
-          regex: /api\.arkoselabs\.com\/v2\/([^/'"]+)/gi,
-          type: "Arkose Enterprise",
-        },
-        {
-          regex: /data-arkose-public-key\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "Arkose Enterprise",
-        },
-
-        // MTCaptcha patterns
-        {
-          regex: /mtcaptcha\.com\/mtcv1\/[^/'"]*\?sitekey=([^&'"]+)/gi,
-          type: "MTCaptcha",
-        },
-        {
-          regex: /data-mtcaptcha-sitekey\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "MTCaptcha",
-        },
-
-        // AWS WAF CAPTCHA patterns
-        {
-          regex: /aws-waf-token\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "AWS WAF CAPTCHA",
-        },
-        {
-          regex: /data-waf-token\s*=\s*['"]([^'"]+)['"]/gi,
-          type: "AWS WAF CAPTCHA",
-        },
+        // ... other patterns ...
       ];
 
       const results: {
@@ -238,7 +123,7 @@ async function crawlPage(
         action?: string;
       }[] = [];
 
-      patterns.forEach(({ regex, type, withAttributes }) => {
+      patterns.forEach(({ regex, type }) => {
         let match;
         const regExp = new RegExp(regex);
         while ((match = regExp.exec(content)) !== null) {
@@ -246,12 +131,9 @@ async function crawlPage(
           if (key && !results.some((r) => r.key === key)) {
             if (key.length > 5 && !/^[<>{}]/.test(key)) {
               const result: any = { type, key };
-
               // Add additional attributes if available
-              if (withAttributes) {
-                if (match[2]) result.size = match[2];
-                if (match[3]) result.theme = match[3];
-              }
+              if (match[2]) result.size = match[2];
+              if (match[3]) result.theme = match[3];
 
               results.push(result);
             }
@@ -443,7 +325,9 @@ async function crawlPage(
     }
 
     // Add additional HTML element search
-    $("[data-pkey], [data-px-appid], [data-arkose-public-key], [data-mtcaptcha-sitekey]").each((_, elem) => {
+    $(
+      "[data-pkey], [data-px-appid], [data-arkose-public-key], [data-mtcaptcha-sitekey]"
+    ).each((_, elem) => {
       let siteKey;
       let type;
 
@@ -476,7 +360,9 @@ async function crawlPage(
     });
 
     // Add script source checking for additional CAPTCHA types
-    $("script[src*='arkoselabs'], script[src*='perimeterx'], script[src*='datadome'], script[src*='mtcaptcha']").each((_, elem) => {
+    $(
+      "script[src*='arkoselabs'], script[src*='perimeterx'], script[src*='datadome'], script[src*='mtcaptcha']"
+    ).each((_, elem) => {
       const src = $(elem).attr("src") || "";
       let key;
       let type;
@@ -527,29 +413,34 @@ async function crawlPage(
 
       // Arkose Labs specific patterns
       {
-        regex: /[?&]key=([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
-        type: "FunCaptcha"
+        regex:
+          /[?&]key=([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
+        type: "FunCaptcha",
       },
       {
-        regex: /enforcement\.arkoselabs\.com\/[^/]+\/([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
-        type: "FunCaptcha"
+        regex:
+          /enforcement\.arkoselabs\.com\/[^/]+\/([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
+        type: "FunCaptcha",
       },
       {
-        regex: /data-arkose-key\s*=\s*['"]([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})['"]/i,
-        type: "FunCaptcha"
+        regex:
+          /data-arkose-key\s*=\s*['"]([A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})['"]/i,
+        type: "FunCaptcha",
       },
     ];
 
     // Add this to the HTML element search section
-    $("iframe[src*='funcaptcha'], iframe[src*='arkoselabs'], div[data-pkey], div[class*='funcaptcha'], div[class*='arkoselabs']").each((_, elem) => {
+    $(
+      "iframe[src*='funcaptcha'], iframe[src*='arkoselabs'], div[data-pkey], div[class*='funcaptcha'], div[class*='arkoselabs']"
+    ).each((_, elem) => {
       let siteKey;
-      const src = $(elem).attr('src') || '';
-      const pkey = $(elem).attr('data-pkey');
-      
+      const src = $(elem).attr("src") || "";
+      const pkey = $(elem).attr("data-pkey");
+
       // Check for pkey in data attribute
       if (pkey) {
         siteKey = pkey;
-      } 
+      }
       // Check for pkey in src URL
       else if (src) {
         const pkeyMatch = src.match(/(?:public_key|pkey)=([^&]+)/);
@@ -574,14 +465,16 @@ async function crawlPage(
 
     // Add this to the script source checking section
     $("script").each((_, elem) => {
-      const content = $(elem).html() || '';
-      const src = $(elem).attr('src') || '';
+      const content = $(elem).html() || "";
+      const src = $(elem).attr("src") || "";
 
       // Check for FunCaptcha initialization in inline scripts
-      if (content.includes('arkose') || content.includes('funcaptcha')) {
-        const matches = content.match(/(?:public_key|pkey)\s*[:=]\s*['"]([^'"]+)['"]/gi);
+      if (content.includes("arkose") || content.includes("funcaptcha")) {
+        const matches = content.match(
+          /(?:public_key|pkey)\s*[:=]\s*['"]([^'"]+)['"]/gi
+        );
         if (matches) {
-          matches.forEach(match => {
+          matches.forEach((match) => {
             const key = match.match(/['"]([^'"]+)['"]/)?.[1];
             if (key) {
               const uniqueKey = `${key}-FunCaptcha-Script`;
@@ -600,7 +493,7 @@ async function crawlPage(
       }
 
       // Check for FunCaptcha in external scripts
-      if (src.includes('funcaptcha') || src.includes('arkoselabs')) {
+      if (src.includes("funcaptcha") || src.includes("arkoselabs")) {
         const pkeyMatch = src.match(/(?:public_key|pkey)=([^&]+)/);
         if (pkeyMatch) {
           const key = pkeyMatch[1];
@@ -621,8 +514,13 @@ async function crawlPage(
     // Add URL parameter check
     try {
       const urlParams = new URL(url).searchParams;
-      const keyParam = urlParams.get('key');
-      if (keyParam && /^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/i.test(keyParam)) {
+      const keyParam = urlParams.get("key");
+      if (
+        keyParam &&
+        /^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/i.test(
+          keyParam
+        )
+      ) {
         const uniqueKey = `${keyParam}-FunCaptcha-URL`;
         if (!captchaSet.has(uniqueKey)) {
           captchaSet.add(uniqueKey);
@@ -635,8 +533,238 @@ async function crawlPage(
         }
       }
     } catch (error) {
-      console.error('Error parsing URL parameters:', error);
+      console.error("Error parsing URL parameters:", error);
     }
+
+    // Enhanced HTML element search for Turnstile
+    $(
+      "[class*='cf-turnstile'], [data-turnstile-key], [data-cf-turnstile], [data-widget='turnstile']"
+    ).each((_, elem) => {
+      const $elem = $(elem);
+      const siteKey =
+        $elem.attr("data-sitekey") ||
+        $elem.attr("data-turnstile-key") ||
+        $elem.attr("data-cf-turnstile");
+
+      if (siteKey) {
+        const uniqueKey = `${siteKey}-Cloudflare Turnstile-HTML Element`;
+        if (!captchaSet.has(uniqueKey)) {
+          captchaSet.add(uniqueKey);
+          captchas.push({
+            siteKey,
+            captchaType: "Cloudflare Turnstile",
+            location: "HTML Element",
+            foundOn: url,
+            theme: $elem.attr("data-theme") || "light",
+            size: $elem.attr("data-size") || "normal",
+            action: $elem.attr("data-action"),
+            variant: $elem.attr("data-appearance") || "Challenge",
+          });
+        }
+      }
+    });
+
+    // Enhanced script source checking for Turnstile
+    $(
+      "script[src*='turnstile'], script[src*='cloudflare'], script[src*='challenges']"
+    ).each((_, elem) => {
+      const src = $(elem).attr("src") || "";
+      const content = $(elem).html() || "";
+
+      // Check for Turnstile in script source
+      const srcMatches = [
+        src.match(/sitekey=([^&'"]+)/),
+        src.match(/render=([^&'"]+)/),
+        src.match(/key=([^&'"]+)/),
+      ];
+
+      for (const match of srcMatches) {
+        if (match) {
+          const key = match[1];
+          const uniqueKey = `${key}-Cloudflare Turnstile-Script Source`;
+          if (!captchaSet.has(uniqueKey)) {
+            captchaSet.add(uniqueKey);
+            captchas.push({
+              siteKey: key,
+              captchaType: "Cloudflare Turnstile",
+              location: "Script Source",
+              foundOn: url,
+            });
+          }
+        }
+      }
+
+      // Check for Turnstile configuration in inline scripts
+      const configMatches = content.match(
+        /turnstile\.render\s*\(\s*{[\s\S]*?sitekey\s*:\s*['"]([^'"]+)['"]/gi
+      );
+      if (configMatches) {
+        configMatches.forEach((match) => {
+          const key = match.match(/['"]([^'"]+)['"]/)?.[1];
+          if (key) {
+            const uniqueKey = `${key}-Cloudflare Turnstile-Script Content`;
+            if (!captchaSet.has(uniqueKey)) {
+              captchaSet.add(uniqueKey);
+              captchas.push({
+                siteKey: key,
+                captchaType: "Cloudflare Turnstile",
+                location: "Script Content",
+                foundOn: url,
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // Enhanced element search
+    const elementSearchPatterns = [
+      {
+        selector:
+          "[class*='cf-turnstile'], [data-turnstile-key], [data-cf-turnstile]",
+        attributeCheck: (elem: any) => {
+          const $elem = $(elem);
+          const sitekey =
+            $elem.attr("data-turnstile-key") ||
+            $elem.attr("data-cf-turnstile") ||
+            $elem.attr("data-sitekey");
+
+          if (!sitekey) return null;
+
+          // If element has Turnstile-related classes or attributes, prioritize Turnstile detection
+          if (
+            $elem.attr("class")?.includes("cf-turnstile") ||
+            $elem.attr("data-turnstile-key") ||
+            $elem.attr("data-cf-turnstile")
+          ) {
+            return {
+              siteKey: sitekey,
+              type: "Cloudflare Turnstile",
+            };
+          }
+          return null;
+        },
+      },
+      {
+        selector: ".g-recaptcha, [data-sitekey]",
+        attributeCheck: (elem: any) => {
+          const $elem = $(elem);
+          const sitekey = $elem.attr("data-sitekey");
+          if (!sitekey) return null;
+
+          // Only identify as reCAPTCHA if it explicitly has g-recaptcha class
+          if ($elem.hasClass("g-recaptcha")) {
+            return {
+              siteKey: sitekey,
+              type: "reCAPTCHA v2",
+            };
+          }
+          return null;
+        },
+      },
+    ];
+
+    // Apply element search patterns
+    elementSearchPatterns.forEach(({ selector, attributeCheck }) => {
+      $(selector).each((_, elem) => {
+        const result = attributeCheck(elem);
+        if (result) {
+          const uniqueKey = `${result.siteKey}-${result.type}-HTML Element`;
+          if (!captchaSet.has(uniqueKey)) {
+            captchaSet.add(uniqueKey);
+            captchas.push({
+              siteKey: result.siteKey,
+              captchaType: result.type,
+              location: "HTML Element",
+              foundOn: url,
+              theme: $(elem).attr("data-theme"),
+              size: $(elem).attr("data-size"),
+              action: $(elem).attr("data-action"),
+            });
+          }
+        }
+      });
+    });
+
+    // Enhanced script content search
+    $("script").each((_, elem) => {
+      const content = $(elem).html() || "";
+      const src = $(elem).attr("src") || "";
+
+      // Check both inline content and src attributes
+      [content, src].forEach((text) => {
+        if (!text) return;
+
+        // Search for initialization patterns
+        const initPatterns = [
+          {
+            regex:
+              /turnstile\.render\s*\(\s*['"](.*?)['"]\s*,\s*{[\s\S]*?sitekey:\s*['"](.*?)['"]/gi,
+            type: "Cloudflare Turnstile",
+          },
+          {
+            regex:
+              /grecaptcha\.render\s*\(\s*['"](.*?)['"]\s*,\s*{[\s\S]*?sitekey:\s*['"](.*?)['"]/gi,
+            type: "reCAPTCHA v2",
+          },
+        ];
+
+        initPatterns.forEach(({ regex, type }) => {
+          let match;
+          while ((match = regex.exec(text)) !== null) {
+            const siteKey = match[2];
+            if (siteKey) {
+              const uniqueKey = `${siteKey}-${type}-Script`;
+              if (!captchaSet.has(uniqueKey)) {
+                captchaSet.add(uniqueKey);
+                captchas.push({
+                  siteKey,
+                  captchaType: type,
+                  location: "Script Content",
+                  foundOn: url,
+                });
+              }
+            }
+          }
+        });
+      });
+    });
+
+    // Add specific script source checking for Turnstile
+    $("script").each((_, elem) => {
+      const src = $(elem).attr("src") || "";
+      const content = $(elem).html() || "";
+
+      // Check for Turnstile-specific patterns in script sources
+      if (
+        src.includes("turnstile") ||
+        src.includes("cloudflare") ||
+        content.includes("turnstile")
+      ) {
+        const turnstilePatterns = [
+          /sitekey['"]\s*:\s*['"]([^'"]+)['"]/i,
+          /data-sitekey=["']([^'"]+)["']/i,
+          /turnstile\.render\s*\(\s*['"]([^'"]+)['"]/i,
+          /data-cf-turnstile=["']([^'"]+)["']/i,
+        ];
+
+        turnstilePatterns.forEach((pattern) => {
+          const match = (src + content).match(pattern);
+          if (match && match[1]) {
+            const uniqueKey = `${match[1]}-Cloudflare Turnstile-Script`;
+            if (!captchaSet.has(uniqueKey)) {
+              captchaSet.add(uniqueKey);
+              captchas.push({
+                siteKey: match[1],
+                captchaType: "Cloudflare Turnstile",
+                location: "Script Content",
+                foundOn: url,
+              });
+            }
+          }
+        });
+      }
+    });
 
     return captchas;
   } catch (error) {
