@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
+import { Github } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -134,7 +135,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} transition-colors duration-300`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <div className="flex justify-center min-h-screen items-start relative">
             <div className="fixed left-5 top-1/2 transform -translate-y-1/2 sm:left-5 sm:top-1/2 md:left-10 md:top-1/2">
               <script
@@ -200,6 +201,16 @@ export default function RootLayout({
               type="text/javascript"
               src="//www.highperformanceformat.com/2aa5dd87245064af79eff4d487110df0/invoke.js"
             ></script>
+          </div>
+          <div className="fixed bottom-4 right-4">
+            <a
+              href="https://github.com/sexfrance/Whats-the-site-key"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Github className="h-6 w-6" />
+            </a>
           </div>
         </ThemeProvider>
       </body>
