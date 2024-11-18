@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
 
+declare global {
+  interface Window {
+    grecaptcha: any;
+  }
+}
+
 interface CaptchaInfo {
   siteKey: string;
   captchaType: string;
@@ -45,13 +51,34 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const [recaptchaReady, setRecaptchaReady] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
+    
+    // Add window load check for reCAPTCHA
+    const checkRecaptchaLoad = setInterval(() => {
+      if (window.grecaptcha && window.grecaptcha.ready) {
+        window.grecaptcha.ready(() => {
+          setRecaptchaReady(true);
+        });
+        clearInterval(checkRecaptchaLoad);
+      }
+    }, 100);
+
+    return () => clearInterval(checkRecaptchaLoad);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!recaptchaReady) {
+      setResult({
+        captchas: [],
+        error: "Please wait for reCAPTCHA to load...",
+      });
+      return;
+    }
+
     setIsLoading(true);
     setResult(null);
     setCopiedKey(null);
@@ -62,22 +89,31 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
     }
 
     try {
-      const clientToken = btoa(crypto.randomUUID() + Date.now());
-      
-      const response = await fetch(`/api/getCaptcha?url=${encodeURIComponent(processedUrl)}`, {
-        method: 'GET',
-        headers: {
-          'x-client-token': clientToken,
-          'x-requested-with': 'XMLHttpRequest',
-          'Accept': 'application/json',
-        },
-        credentials: 'same-origin',
-      });
+      const token = await window.grecaptcha.execute(
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+        { action: "submit" }
+      );
+
+      const clientToken = btoa(crypto.randomUUID() + Date.now().toString());
+
+      const response = await fetch(
+        `/api/getCaptcha?url=${encodeURIComponent(processedUrl)}`,
+        {
+          method: "GET",
+          headers: {
+            "x-client-token": clientToken,
+            "x-requested-with": "XMLHttpRequest",
+            Accept: "application/json",
+            "x-recaptcha-token": token,
+          },
+          credentials: "same-origin",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
       setResult(result);
     } catch (error) {
@@ -209,7 +245,9 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
                                   ) : (
                                     <Copy className="h-4 w-4" />
                                   )}
-                                  <span className="sr-only">Copy site key</span>
+                                  <span className="sr-only">
+                                    Copy site key
+                                  </span>
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
