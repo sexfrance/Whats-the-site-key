@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { Github } from "lucide-react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -160,6 +161,7 @@ export default function RootLayout({
             <div className="flex-grow flex justify-center items-center px-4 sm:px-6 lg:px-8">
               {children}
               <Analytics />
+              <SpeedInsights />
             </div>
             <div className="fixed right-5 top-1/2 transform -translate-y-1/2 sm:right-5 sm:top-1/2 md:right-10 md:top-1/2">
               <script
