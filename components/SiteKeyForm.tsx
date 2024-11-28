@@ -46,7 +46,7 @@ interface SiteKeyFormProps {
 
 declare global {
   interface Window {
-    grecaptcha: {
+    grecaptcha: any & {
       ready: (callback: () => void) => void;
       execute: (
         siteKey: string,
