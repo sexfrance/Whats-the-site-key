@@ -61,7 +61,9 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
-
+.grecaptcha-badge {
+  visibility: hidden;
+}
 @layer base {
   * {
     @apply border-border;

@@ -44,6 +44,18 @@ interface SiteKeyFormProps {
   getSiteKey: (url: string) => Promise<CaptchaResult>;
 }
 
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (callback: () => void) => void;
+      execute: (
+        siteKey: string,
+        options: { action: string }
+      ) => Promise<string>;
+    };
+  }
+}
+
 export default function Component({ getSiteKey }: SiteKeyFormProps) {
   const [url, setUrl] = React.useState("");
   const [result, setResult] = React.useState<CaptchaResult | null>(null);
@@ -55,7 +67,7 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
 
   React.useEffect(() => {
     setMounted(true);
-    
+
     // Add window load check for reCAPTCHA
     const checkRecaptchaLoad = setInterval(() => {
       if (window.grecaptcha && window.grecaptcha.ready) {
@@ -89,12 +101,21 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
     }
 
     try {
-      const token = await window.grecaptcha.execute(
-        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-        { action: "submit" }
-      );
+      const clientToken = btoa(crypto.randomUUID() + Date.now());
 
-      const clientToken = btoa(crypto.randomUUID() + Date.now().toString());
+      const recaptchaToken = await new Promise<string>((resolve, reject) => {
+        window.grecaptcha.ready(async () => {
+          try {
+            const token = await window.grecaptcha.execute(
+              process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
+              { action: "submit" }
+            );
+            resolve(token);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
 
       const response = await fetch(
         `/api/getCaptcha?url=${encodeURIComponent(processedUrl)}`,
@@ -104,7 +125,7 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
             "x-client-token": clientToken,
             "x-requested-with": "XMLHttpRequest",
             Accept: "application/json",
-            "x-recaptcha-token": token,
+            "x-recaptcha-token": recaptchaToken,
           },
           credentials: "same-origin",
         }
@@ -137,8 +158,8 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-3xl shadow-lg">
+    <div className="flex transition-colors duration-300 min-h-screen items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-3xl transition-colors max-duration-300 shadow-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">
@@ -245,9 +266,7 @@ export default function Component({ getSiteKey }: SiteKeyFormProps) {
                                   ) : (
                                     <Copy className="h-4 w-4" />
                                   )}
-                                  <span className="sr-only">
-                                    Copy site key
-                                  </span>
+                                  <span className="sr-only">Copy site key</span>
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
