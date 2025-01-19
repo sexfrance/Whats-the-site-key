@@ -60,5 +60,5 @@ v0.0.1 ⋮ 30/10/2024
 <p align="center">
   <img src="https://img.shields.io/github/license/sexfrance/Whats-the-site-key.svg?style=for-the-badge&labelColor=black&color=f429ff&logo=IOTA"/>
   <img src="https://img.shields.io/github/stars/sexfrance/Whats-the-site-key.svg?style=for-the-badge&labelColor=black&color=f429ff&logo=IOTA"/>
->   <img src="https://img.shields.io/github/languages/top/sexfrance/Whats-the-site-key.svg?style=for-the-badge&labelColor=black&color=f429ff&logo=python"/>
+  <img src="https://img.shields.io/github/languages/top/sexfrance/Whats-the-site-key.svg?style=for-the-badge&labelColor=black&color=f429ff&logo=python"/>
 </p>
